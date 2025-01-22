@@ -1,0 +1,70 @@
+services:
+  # Rails Application
+  web:
+    build: .
+    container_name: rails_app
+    ports:
+      - "3000:3000"
+      - "9394:9394"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/online_offline_development
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/myapp
+    networks:
+      - myapp_network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: online_offline_development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - myapp_network
+
+  # Redis for caching and background jobs
+  redis:
+    image: redis:6
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - myapp_network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - myapp_network
+
+  # Grafana for Visualization
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    networks:
+      - myapp_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  myapp_network:
+    driver: bridge
