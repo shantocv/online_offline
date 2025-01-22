@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: shantocv/online_offline-web:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          value: postgres://postgres:postgres@db:5432/online_offline_development
+        - name: REDIS_URL
+          value: redis://redis:6379/0
+        volumeMounts:
+        - name: app-volume
+          mountPath: /myapp
+      volumes:
+      - name: app-volume
+        hostPath:
+          path: /mnt/online_offline
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: NodePort
